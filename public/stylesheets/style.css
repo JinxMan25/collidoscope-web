@@ -1,6 +1,11 @@
 body {
-  padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  padding: 0px;
+}
+
+html, body, div, canvas {
+    margin: 0;
+    padding: 0;
 }
 
 a {
