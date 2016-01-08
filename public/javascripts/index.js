@@ -1,148 +1,144 @@
 var app = angular.module("home", []);
 
-app.controller("collidoscope", function($scope, $timeout) {
-  var canvas = new fabric.Canvas('c');
+app.controller("collidoscope", function($scope, $timeout, $compile) {
+  navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
+  window.requestAnimFrame = (function(){
+    return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
+    function(callback, element){
+      window.setTime(callback, 1000 / 60);
+    };
+  })();
 
-  var test = [20,30,40, 80, 120, 150, 50, 20, 200, 210, 220, 300]
-  var objects1 = [];
-  var objects2 = [];
-  counter = 0;
+  window.AudioContext = (function() {
+    return window.webkitAudioContext || window.AudioContext || window.mozAudioContext;
+  })();
 
-  canvas.setWidth(window.innerWidth);
-  canvas.setHeight(window.innerHeight);
-  canvas.setBackgroundColor('rgba(24,24,24,0.9)', canvas.renderAll.bind(canvas));
-  canvas.calcOffset();
+  var audioContext, analyserNode, javascriptNode;
+  var sampleSize = 4096;
+  sourceNode = null;
 
-  
-  function addObj(height) {
-    var rect = new fabric.Rect({
-      left: counter*15,
-      top: 100,
-      fill: 'white',
-      stroke: 'rgba(24,24,24,0.9',
-      strokeWidth: 2,
-      width: 15,
-      height: 0
-    });
+  var amplitudeArray;
+  var audioStream;
+  var counter = 0;
 
-    var rect2 = new fabric.Rect({
-      left: counter*15,
-      top: 100,
-      stroke: 'rgba(24,24,24,0.9',
-      strokeWidth: 2,
-      fill: 'white',
-      width: 15,
-      height: 0
-    });
-
-    rect2.rotate(180);
-
-    objects1.push(rect);
-    objects2.push(rect2);
-
-
-    rect.animate('height', height, {
-      duration: 550,
-      onChange: canvas.renderAll.bind(canvas),
-      easing: fabric.util.ease.easeOutBack
-    });
-
-    rect2.animate('height', height, {
-      duration: 550,
-      onChange: canvas.renderAll.bind(canvas),
-      easing: fabric.util.ease.easeOutBack
-    });
-
-    rect.top = (window.innerHeight/2) - (rect.height/2) + 1;
-    rect2.top = (window.innerHeight/2) - (rect2.height/2) - 1;
-
-    counter++;
-
-    canvas.add(rect);
-    canvas.add(rect2);
+  try {
+    audioContext = new AudioContext();
+  } catch(e) {
+    alert('Web Audio API is not supported in this browser');
   }
-  
 
-  test.forEach(function(height){
-    addObj(height);
-  });
-
-
-
-  /*var rect = new fabric.Rect({
-    left: 0,
-    top: 100,
-    fill: 'white',
-    width: 20,
-    height: 0
-  });
-
-  var rect2 = new fabric.Rect({
-    left: 0,
-    top: 200,
-    fill: 'white',
-    width: 20,
-    height: 0
-  });
-
-  var rect3 = new fabric.Rect({
-    left: 20+1,
-    top: 100,
-    fill: 'white',
-    width: 20,
-    height: 0
-  });
-
-  var rect4 = new fabric.Rect({
-    left: 20+1,
-    top: 200,
-    fill: 'white',
-    width: 20,
-    height: 0
-  });
-
-  rect2.rotate(180);
-  rect4.rotate(180);
-
-  rect.animate('height', 120, {
-    duration: 550,
-    onChange: canvas.renderAll.bind(canvas),
-    easing: fabric.util.ease.easeOutBack
-  });
-
-  rect2.animate('height', 120, {
-    duration: 550,
-    onChange: canvas.renderAll.bind(canvas),
-    easing: fabric.util.ease.easeOutBack
-  });
-
-  setTimeout(function() {
-    rect3.animate('height', 200, {
-      duration: 550,
-      onChange: canvas.renderAll.bind(canvas),
-      easing: fabric.util.ease.easeOutBack
-    });
-
-    rect4.animate('height', 200, {
-      duration: 550,
-      onChange: canvas.renderAll.bind(canvas),
-      easing: fabric.util.ease.easeOutBack
-    });
-  }, 200);
+  $scope.record = function() {
+    if (javascriptNode){
+      javascriptNode.onaudioprocess = null;
+      audioContext.close();
+      $(".container").empty();
+    }
+    if (sourceNode)  sourceNode.disconnect();
 
 
+    try {
+      navigator.getUserMedia({ video: false, audio: true }, setupAudioNodes, function(e) { console.log(e) });
+    } catch (e) {
+      alert('webkitGetUserMedia threw an exception' + e);
+    }
+  }
 
-  rect.top = (window.innerHeight/2) - (rect.height/2) + 1;
-  rect2.top = (window.innerHeight/2) - (rect2.height/2) - 1;
-  rect3.top = (window.innerHeight/2) - (rect3.height/2) + 1;
-  rect4.top = (window.innerHeight/2) - (rect4.height/2) - 1;
+  /*setInterval(function() { 
+  }, 10);*/
+  var setupAudioNodes = function(stream) {
+    sourceNode = audioContext.createMediaStreamSource(stream);
+    audioStream = stream;
 
-  canvas.add(rect);
-  canvas.add(rect2);
-  canvas.add(rect3);
-  canvas.add(rect4);*/
+    analyserNode = audioContext.createAnalyser();
+    javascriptNode = audioContext.createScriptProcessor(sampleSize, 1, 1);
+
+    amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
+    
+    console.log("Start time:");
+    console.log(new Date());
+    javascriptNode.onaudioprocess = function() {
+      amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
+      analyserNode.getByteTimeDomainData(amplitudeArray);
+      requestAnimFrame(putBar);
+    }
+
+    sourceNode.connect(analyserNode);
+    analyserNode.connect(javascriptNode);
+    javascriptNode.connect(audioContext.destination);
+
+  }
+
+  self = this;
+  function putBar() {
+    var minValue = 9999999;
+    var maxValue = 0;
+    for (var i = 0; i < amplitudeArray.length; i++) {
+      var value = amplitudeArray[i] / 256;
+      if (value > maxValue) {
+          maxValue = value;
+      } else if(value < minValue) {
+          minValue = value;
+      }
+    }
+
+    var y_lo = window.innerHeight - (window.innerHeight * minValue) - 1;
+    var y_hi = window.innerHeight - (window.innerHeight * maxValue) - 1;
 
 
+    if ((maxValue - 0.5) == 0) {
+      maxValue = 10;
+    } else {
+      maxValue = (maxValue - 0.5) *2500;
+    }
+    maxValue = (maxValue >= 300) ? 300 : maxValue;
 
-  // "add" rectangle onto canvas
+    if (counter*10.6 >= window.innerWidth) {
+      console.log(new Date());
+      return;
+    }
+    var width = (window.innerWidth/5)/12;
+    var bar = $compile('<div bar-directive width="' + width + '" height="' + maxValue + '"></div>');
+    var barHtml = bar($scope);
+    $(".container").append(barHtml);
+    counter++;
+  }
+  /*while(1) {
+    var y;
+    for (i=0;i< 5; i++) {
+      setTimeout(function() {
+        $(".container .bar")[y].css("background", "white");
+        $(".container .bar")[i].css("background", "blue");
+      }, 200);
+      y = i;
+    }
+  }*/
+
+});
+
+
+app.directive("barDirective", function() {
+  return {
+    scope: {
+      height: '=',
+      width: '='
+    },
+    template: '<div class="bar"></div>',
+    replace: true,
+    link: function(scope, elem, attrs) {
+      elem.css("height", scope.height);
+      elem.css("width", scope.width);
+      elem.bind("click", function() {
+        elem.css("background", "blue");
+      });
+      elem.bind("mouseenter", function(){
+        elem.css("background", "rgba(250, 120, 0, 1)");
+      });
+      elem.bind("mouseleave", function() {
+        elem.css("background", "white");
+      });
+      elem.bind("dblclick", function(){
+        elem.css("background", "white");
+      });
+    }
+  };
 });

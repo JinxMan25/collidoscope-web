@@ -1,11 +1,14 @@
 <html>
   <head>
     <script src="/javascripts/angular.min.js"></script>
-    <script src="/javascripts/fabric.min.js"></script>
+    <script src="/javascripts/jquery.js"></script>
     <script src="/javascripts/index.js"></script>
     <link rel="stylesheet" href="stylesheets/style.css"> 
   </head>
   <body ng-app="home" ng-controller="collidoscope">
-    <canvas id="c"></canvas>
+    <div class="container">
+      <div class="bar" style="margin-right:0px;background-color:black;"></div>
+    </div>
+    <div ng-click="record()" class="record"></div>
   </body>
 </html>
