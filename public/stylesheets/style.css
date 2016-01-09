@@ -25,16 +25,39 @@ body {
   vertical-align: middle;
 }
 
-.record {
+.time {
+  font-size: 36px;
   position: fixed;
-  height: 40px;
-  border-radius: 50%;
-  width: 40px;
+  bottom: 0;
+  left: 0;
+  color: white;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+.c {
+  position: fixed;
   margin-bottom: 10px;
   margin-right: 10px;
   bottom: 0;
   right: 0;
+}
+
+.c div {
+  display: inline-block;
+}
+
+.record {
+  height: 40px;
+  border-radius: 50%;
+  width: 40px;
   background: rgb(220,10,10);
 }
 
+.play {
+  height: 40px;
+  border-radius: 50%;
+  width: 40px;
+  background: rgb(10,220,10);
+}
 

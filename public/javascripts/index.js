@@ -1,6 +1,7 @@
 var app = angular.module("home", []);
 
 app.controller("collidoscope", function($scope, $timeout, $compile) {
+  $scope.width = (window.innerWidth/5)/11;
   navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
   window.requestAnimFrame = (function(){
     return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame ||
@@ -19,7 +20,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
 
   var amplitudeArray;
   var audioStream;
-  var counter = 0;
+  counter = 0;
 
   try {
     audioContext = new AudioContext();
@@ -54,9 +55,12 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
 
     amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
     
-    console.log("Start time:");
-    console.log(new Date());
     javascriptNode.onaudioprocess = function() {
+      if ((counter* ($scope.width+5)+$scope.width+5) >= window.innerWidth) {
+        return;
+      }
+      $scope.time = audioContext.currentTime;
+      $scope.$apply();
       amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
       analyserNode.getByteTimeDomainData(amplitudeArray);
       requestAnimFrame(putBar);
@@ -92,15 +96,26 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     }
     maxValue = (maxValue >= 300) ? 300 : maxValue;
 
-    if (counter*10.6 >= window.innerWidth) {
-      console.log(new Date());
+    if ((counter* ($scope.width+5)+5) >= window.innerWidth) {
       return;
     }
-    var width = (window.innerWidth/5)/12;
-    var bar = $compile('<div bar-directive width="' + width + '" height="' + maxValue + '"></div>');
+    var bar = $compile('<div bar-directive width="' + $scope.width + '" height="' + maxValue + '"></div>');
     var barHtml = bar($scope);
     $(".container").append(barHtml);
     counter++;
+  }
+  var y;
+  $scope.loop = function() {
+    var i = 1;
+    var z = 80;
+    setInterval(function(){
+      y = i;
+      i = (i == z) ? 0 : i;
+      i++;
+      debugger;
+      $($(".container .bar")[y]).css("background", "white");
+      $($(".container .bar")[i]).css("background", "blue");
+    }, 500);
   }
   /*while(1) {
     var y;

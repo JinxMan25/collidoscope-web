@@ -9,6 +9,12 @@
     <div class="container">
       <div class="bar" style="margin-right:0px;background-color:black;"></div>
     </div>
-    <div ng-click="record()" class="record"></div>
+    <div class="time">
+      {{ time }}
+    </div>
+    <span class="c">
+      <div ng-click="loop()" class="play"></div>
+      <div ng-click="record()" class="record"></div>
+    </span>
   </body>
 </html>
