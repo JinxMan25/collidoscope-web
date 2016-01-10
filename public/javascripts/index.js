@@ -21,6 +21,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   var amplitudeArray;
   var audioStream;
   counter = 0;
+  test = 0;
 
   try {
     audioContext = new AudioContext();
@@ -56,7 +57,9 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
     
     javascriptNode.onaudioprocess = function() {
-      if ((counter* ($scope.width+5)+$scope.width+5) >= window.innerWidth) {
+      if (test == 44) {
+        javascriptNode.onaudioprocess = null;
+        audioContext.close();
         return;
       }
       $scope.time = audioContext.currentTime;
@@ -64,6 +67,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
       analyserNode.getByteTimeDomainData(amplitudeArray);
       requestAnimFrame(putBar);
+      test++;
     }
 
     sourceNode.connect(analyserNode);
