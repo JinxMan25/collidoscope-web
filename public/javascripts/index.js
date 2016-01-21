@@ -1,3 +1,15 @@
+function setup() {
+  mic = new p5.AudioIn();
+
+  mic.start();
+
+  recorder = new p5.SoundRecorder();
+
+  recorder.setInput(mic);
+
+  soundFile = new p5.SoundFile();
+}
+
 var app = angular.module("home", []);
 
 app.controller("collidoscope", function($scope, $timeout, $compile) {
@@ -30,6 +42,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   }
 
   $scope.record = function() {
+    recorder.record(soundFile);
     if (javascriptNode){
       javascriptNode.onaudioprocess = null;
       audioContext.close();
@@ -58,6 +71,9 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     
     javascriptNode.onaudioprocess = function() {
       if (test == 44) {
+        recorder.stop();
+        soundFile.loop();
+
         javascriptNode.onaudioprocess = null;
         audioContext.close();
         return;
@@ -109,8 +125,26 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     counter++;
   }
   var y;
+  wait = false;
+  var throttle = function(cb, delay) {
+    if (wait) {
+      console.log("Limit reached!");
+      return;
+    }
+    wait = true;
+    cb();
+    setTimeout(function() {
+      wait = false;
+    }, delay) 
+  }
   $scope.loop = function() {
-    var i = 1;
+    soundFile.play(); // play the result!
+    saveSound(soundFile, 'mySound.wav'); // save file
+    throttle(function(){
+      console.log("Logged!");
+    }, 1000);
+
+    /*var i = 1;
     var z = 80;
     setInterval(function(){
       y = i;
@@ -118,8 +152,8 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       i++;
       debugger;
       $($(".container .bar")[y]).css("background", "white");
-      $($(".container .bar")[i]).css("background", "blue");
-    }, 500);
+      $($(".container .bar")[i]).css("background", "rgba(250,120,0,1)");
+    }, 17);*/
   }
   /*while(1) {
     var y;
