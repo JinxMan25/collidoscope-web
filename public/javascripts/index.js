@@ -1,5 +1,6 @@
 function setup() {
   mic = new p5.AudioIn();
+  reverb = new p5.Reverb();
 
   mic.start();
 
@@ -50,6 +51,10 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     }
     if (sourceNode)  sourceNode.disconnect();
 
+    setInterval(function() {
+      console.log(soundFile.currentTime());
+    },1);
+
 
     try {
       navigator.getUserMedia({ video: false, audio: true }, setupAudioNodes, function(e) { console.log(e) });
@@ -72,6 +77,8 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     javascriptNode.onaudioprocess = function() {
       if (test == 44) {
         recorder.stop();
+        reverb.process(soundFile, 3, 2);
+        
         soundFile.loop();
 
         javascriptNode.onaudioprocess = null;
