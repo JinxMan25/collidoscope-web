@@ -14,6 +14,7 @@ function setup() {
 var app = angular.module("home", []);
 
 app.controller("collidoscope", function($scope, $timeout, $compile) {
+  var recording = false;
   $scope.width = (window.innerWidth/5)/11;
   navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
   window.requestAnimFrame = (function(){
@@ -26,6 +27,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   window.AudioContext = (function() {
     return window.webkitAudioContext || window.AudioContext || window.mozAudioContext;
   })();
+
 
   var audioContext, analyserNode, javascriptNode;
   var sampleSize = 4096;
@@ -42,18 +44,31 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     alert('Web Audio API is not supported in this browser');
   }
 
+  var seeker = function(){
+    var i = 0;
+    var bar = counter / $scope.time + 2;
+    
+    setInterval(function() {
+      y = i;
+      i = Math.round(bar*soundFile.currentTime());
+      i = (i >= counter) ? 0 : i;
+
+      $($(".container .bar")[y == 0 ? y + 1 : y]).css("background", "white");
+      $($(".container .bar")[i == 0 ? i + 1 : i]).css("background", "rgba(250,120,0,1)");
+    }, 0);
+  }
+
   $scope.record = function() {
+    recording = true;
+    $scope.time = 0;
     recorder.record(soundFile);
     if (javascriptNode){
       javascriptNode.onaudioprocess = null;
       audioContext.close();
       $(".container").empty();
     }
-    if (sourceNode)  sourceNode.disconnect();
+    if (sourceNode) sourceNode.disconnect();
 
-    setInterval(function() {
-      console.log(soundFile.currentTime());
-    },1);
 
 
     try {
@@ -75,8 +90,23 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
     
     javascriptNode.onaudioprocess = function() {
+      if (!recording){
+        return;
+      }
       if (test == 44) {
         recorder.stop();
+        soundFile.rate(0.88);
+        seeker();
+        delay = new p5.Delay();
+
+          // delay.process() accepts 4 parameters:
+          // source, delayTime, feedback, filter frequency
+          // play with these numbers!!
+          delay.process(soundFile, .12, .7, 2300);
+          
+          // play the noise with an envelope,
+          // a series of fades ( time / value pairs )
+          env = new p5.Env(.01, 0.2, .2, .1);
         reverb.process(soundFile, 3, 2);
         
         soundFile.loop();
@@ -144,24 +174,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       wait = false;
     }, delay) 
   }
-  $scope.loop = function() {
-    soundFile.play(); // play the result!
-    saveSound(soundFile, 'mySound.wav'); // save file
-    throttle(function(){
-      console.log("Logged!");
-    }, 1000);
 
-    /*var i = 1;
-    var z = 80;
-    setInterval(function(){
-      y = i;
-      i = (i == z) ? 0 : i;
-      i++;
-      debugger;
-      $($(".container .bar")[y]).css("background", "white");
-      $($(".container .bar")[i]).css("background", "rgba(250,120,0,1)");
-    }, 17);*/
-  }
   /*while(1) {
     var y;
     for (i=0;i< 5; i++) {
@@ -189,6 +202,8 @@ app.directive("barDirective", function() {
       elem.css("width", scope.width);
       elem.bind("click", function() {
         elem.css("background", "blue");
+        debugger;
+        soundFile.jump(($(this).index())/(scope.time*counter)); 
       });
       elem.bind("mouseenter", function(){
         elem.css("background", "rgba(250, 120, 0, 1)");
