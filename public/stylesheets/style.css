@@ -12,7 +12,6 @@ body {
   height: 300px;
   margin-top: -150px;
   display:inline-block;
-  overflow: hidden;
 }
 
 .bar {

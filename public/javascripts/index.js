@@ -38,15 +38,10 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   counter = 0;
   test = 0;
 
-  try {
-    audioContext = new AudioContext();
-  } catch(e) {
-    alert('Web Audio API is not supported in this browser');
-  }
 
   var seeker = function(){
     var i = 0;
-    var bar = counter / $scope.time + 2;
+    var bar = counter / $scope.time;
     
     setInterval(function() {
       y = i;
@@ -59,8 +54,6 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   }
 
   $scope.record = function() {
-    recording = true;
-    $scope.time = 0;
     recorder.record(soundFile);
     if (javascriptNode){
       javascriptNode.onaudioprocess = null;
@@ -69,6 +62,11 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     }
     if (sourceNode) sourceNode.disconnect();
 
+    try {
+      audioContext = new AudioContext();
+    } catch(e) {
+      alert('Web Audio API is not supported in this browser');
+    }
 
 
     try {
@@ -90,23 +88,15 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
     
     javascriptNode.onaudioprocess = function() {
-      if (!recording){
-        return;
-      }
       if (test == 44) {
         recorder.stop();
-        soundFile.rate(0.88);
+        soundFile.rate(1);
         seeker();
         delay = new p5.Delay();
 
-          // delay.process() accepts 4 parameters:
-          // source, delayTime, feedback, filter frequency
-          // play with these numbers!!
-          delay.process(soundFile, .12, .7, 2300);
+        delay.process(soundFile, .12, .7, 2300);
           
-          // play the noise with an envelope,
-          // a series of fades ( time / value pairs )
-          env = new p5.Env(.01, 0.2, .2, .1);
+        env = new p5.Env(.01, 0.2, .2, .1);
         reverb.process(soundFile, 3, 2);
         
         soundFile.loop();
@@ -161,36 +151,17 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     $(".container").append(barHtml);
     counter++;
   }
-  var y;
-  wait = false;
-  var throttle = function(cb, delay) {
-    if (wait) {
-      console.log("Limit reached!");
-      return;
-    }
-    wait = true;
-    cb();
-    setTimeout(function() {
-      wait = false;
-    }, delay) 
-  }
-
-  /*while(1) {
-    var y;
-    for (i=0;i< 5; i++) {
-      setTimeout(function() {
-        $(".container .bar")[y].css("background", "white");
-        $(".container .bar")[i].css("background", "blue");
-      }, 200);
-      y = i;
-    }
-  }*/
-
 });
 
+app.factory("AudioFactory", function(){
+  var o = {
+  };
+  return o;
+});
 
 app.directive("barDirective", function() {
   return {
+    scope: true,
     scope: {
       height: '=',
       width: '='
@@ -202,7 +173,6 @@ app.directive("barDirective", function() {
       elem.css("width", scope.width);
       elem.bind("click", function() {
         elem.css("background", "blue");
-        debugger;
         soundFile.jump(($(this).index())/(scope.time*counter)); 
       });
       elem.bind("mouseenter", function(){
