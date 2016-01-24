@@ -4,17 +4,28 @@
     <script src="/javascripts/jquery.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.21/p5.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.4.21/addons/p5.sound.js"></script>
+    <script src="http://yui.yahooapis.com/3.18.1/build/yui/yui-min.js"></script>
     <script src="/javascripts/index.js"></script>
     <link rel="stylesheet" href="stylesheets/style.css"> 
+    <link rel="stylesheet" href="stylesheets/slider.css"> 
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"> 
   </head>
-  <body ng-app="home" ng-controller="collidoscope">
+  <body class="yui3-skin-sam" ng-app="home" ng-controller="collidoscope">
     <div class="container">
       <div class="bar none" style="margin-right:0px;background-color:black;"></div>
     </div>
     <div class="time">
     </div>
     <span class="c">
-      <div ng-click="record()" class="record"></div>
+      <div ng-click="record()" class="record">
+        <i class="fa fa-microphone fa-lg" ng-class="{'fa-microphone-slash': stop}" style="color:white"></i>
+      </div>
     </span>
+    <div class="options">
+      <div class="drop" >
+        <i class="fa fa-chevron-down fa-lg"></i>
+      </div>
+        <div id="demo"></div> 
+    </div>
   </body>
 </html>

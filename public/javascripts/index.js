@@ -14,6 +14,20 @@ function setup() {
 var app = angular.module("home", []);
 
 app.controller("collidoscope", function($scope, $timeout, $compile) {
+  $scope.rate = 50;
+
+  $(".bar").bind("click",function() {
+    soundFile.jump(($(this).index())/($scope.time*counter)); 
+  });
+
+  var clicked = true;
+  $(".options .drop").click(function() {
+    $(".options").css("transform", clicked ? "translateY(0px)" : "translateY(100px)");
+    $(this).children("i").css("transform", clicked ? "rotate(360deg)" : "rotate(180deg)");
+    clicked = !clicked;
+  });
+
+
   var recording = false;
   $scope.width = (window.innerWidth/5)/11;
   navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia);
@@ -39,7 +53,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   test = 0;
 
 
-  var seeker = function(){
+  var seeker = function() {
     var i = 0;
     var bar = counter / $scope.time;
     
@@ -54,10 +68,11 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
   }
 
   $scope.record = function() {
+    $scope.stop = true;
     recorder.record(soundFile);
-    if (javascriptNode){
-      javascriptNode.onaudioprocess = null;
-      audioContext.close();
+    if (javascriptNode) {
+      soundFile.stop();
+      javascriptNode = null;
       $(".container").empty();
     }
     if (sourceNode) sourceNode.disconnect();
@@ -90,7 +105,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     javascriptNode.onaudioprocess = function() {
       if (test == 44) {
         recorder.stop();
-        soundFile.rate(1);
+        soundFile.rate($scope.rate/50);
         seeker();
         delay = new p5.Delay();
 
@@ -132,10 +147,6 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       }
     }
 
-    var y_lo = window.innerHeight - (window.innerHeight * minValue) - 1;
-    var y_hi = window.innerHeight - (window.innerHeight * maxValue) - 1;
-
-
     if ((maxValue - 0.5) == 0) {
       maxValue = 10;
     } else {
@@ -151,6 +162,29 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     $(".container").append(barHtml);
     counter++;
   }
+  YUI().use('dial', function(Y) {
+      setRate = function(e){
+        soundFile.rate(e.newVal);
+      }
+
+      var dial = new Y.Dial({
+          min:0,
+          max:5,
+          diameter: 50,
+          centerButtonDiameter: 0.3,
+          stepsPerRevolution:5,
+          decimalPlaces: 2,
+
+          value: 1,
+          strings: {label:'', resetStr:'Reset', tooltipHandle:'Drag to set value'},
+          after: {
+            valueChange: Y.bind(setRate, dial)
+          }
+      });
+
+      dial.render('#demo');
+
+  });
 });
 
 app.factory("AudioFactory", function(){
@@ -161,7 +195,6 @@ app.factory("AudioFactory", function(){
 
 app.directive("barDirective", function() {
   return {
-    scope: true,
     scope: {
       height: '=',
       width: '='
@@ -171,10 +204,6 @@ app.directive("barDirective", function() {
     link: function(scope, elem, attrs) {
       elem.css("height", scope.height);
       elem.css("width", scope.width);
-      elem.bind("click", function() {
-        elem.css("background", "blue");
-        soundFile.jump(($(this).index())/(scope.time*counter)); 
-      });
       elem.bind("mouseenter", function(){
         elem.css("background", "rgba(250, 120, 0, 1)");
       });
