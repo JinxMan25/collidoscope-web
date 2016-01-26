@@ -52,7 +52,7 @@ body {
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
   transform: translateY(100px);
-  background: rgba(240,240,240,0.8);
+  background:white;
   transition: 0.2s ease-in-out;
 }
 
@@ -108,4 +108,5 @@ body {
 }
 
 .yui3-dial-value-string{
+  display: none;
 }

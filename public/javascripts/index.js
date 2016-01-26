@@ -157,7 +157,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     if ((counter* ($scope.width+5)+5) >= window.innerWidth) {
       return;
     }
-    var bar = $compile('<div bar-directive width="' + $scope.width + '" height="' + maxValue + '"></div>');
+    var bar = $compile('<div bar-directive width="' + $scope.width + '" height="' + maxValue + '" time="' + $scope.time + '"></div>');
     var barHtml = bar($scope);
     $(".container").append(barHtml);
     counter++;
@@ -166,8 +166,11 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       setRate = function(e){
         soundFile.rate(e.newVal);
       }
+      
+      var reverbDial = new Y.Dial({
+      });
 
-      var dial = new Y.Dial({
+      var rateDial = new Y.Dial({
           min:0,
           max:5,
           diameter: 50,
@@ -178,11 +181,11 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
           value: 1,
           strings: {label:'', resetStr:'Reset', tooltipHandle:'Drag to set value'},
           after: {
-            valueChange: Y.bind(setRate, dial)
+            valueChange: Y.bind(setRate, rateDial)
           }
       });
 
-      dial.render('#demo');
+      rateDial.render('#demo');
 
   });
 });
@@ -197,13 +200,18 @@ app.directive("barDirective", function() {
   return {
     scope: {
       height: '=',
-      width: '='
+      width: '=',
+      time: '='
     },
     template: '<div class="bar"></div>',
     replace: true,
     link: function(scope, elem, attrs) {
       elem.css("height", scope.height);
       elem.css("width", scope.width);
+
+      elem.bind("click", function(e){
+        soundFile.jump(scope.time, 0.5);
+      });
       elem.bind("mouseenter", function(){
         elem.css("background", "rgba(250, 120, 0, 1)");
       });
