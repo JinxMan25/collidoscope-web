@@ -16,9 +16,6 @@ var app = angular.module("home", []);
 app.controller("collidoscope", function($scope, $timeout, $compile) {
   $scope.rate = 50;
 
-  $(".bar").bind("click",function() {
-    soundFile.jump(($(this).index())/($scope.time*counter)); 
-  });
 
   var clicked = true;
   $(".options .drop").click(function() {
@@ -62,8 +59,19 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       i = Math.round(bar*soundFile.currentTime());
       i = (i >= counter) ? 0 : i;
 
-      $($(".container .bar")[y == 0 ? y + 1 : y]).css("background", "white");
-      $($(".container .bar")[i == 0 ? i + 1 : i]).css("background", "rgba(250,120,0,1)");
+      var prevBar = $($(".container .bar")[y == 0 ? y + 1 : y]);
+      var currentBar = $($(".container .bar")[i == 0 ? i + 1 : i]);
+
+
+      if (prevBar.attr("marker") === ""){
+        prevBar.css("background", "rgb(40,250,40)");
+      } else {
+        $(prevBar.css("background", "white"));
+      }
+
+      $(currentBar.css("background", "rgba(250,120,0,1)"));
+
+
     }, 0);
   }
 
@@ -103,16 +111,16 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     amplitudeArray = new Uint8Array(analyserNode.frequencyBinCount);
     
     javascriptNode.onaudioprocess = function() {
-      if (test == 44) {
+      if (test == 48) {
         recorder.stop();
         soundFile.rate($scope.rate/50);
         seeker();
         delay = new p5.Delay();
 
-        delay.process(soundFile, .12, .7, 2300);
+        //delay.process(soundFile, .12, .7, 2300);
           
-        env = new p5.Env(.01, 0.2, .2, .1);
-        reverb.process(soundFile, 3, 2);
+        //reverb.process(soundFile, 3, 2);
+        reverb.process(soundFile, 0, 0);
         
         soundFile.loop();
 
@@ -162,12 +170,47 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
     $(".container").append(barHtml);
     counter++;
   }
+
   YUI().use('dial', function(Y) {
       setRate = function(e){
         soundFile.rate(e.newVal);
       }
-      
+      //delay.process(soundFile, .12, .7, 2300);
+      //
+
+      setReverb = function(e){
+        reverb.set(e.newVal, 2);
+      }
+
+      setFrequency = function(e){
+        delay.filter(e.newVal);
+      }
+
+      /*var delayDial = new Y.
+        min: 100,
+        max: 2500,
+        diameter: 50,
+        centerButtonDiameter: 0.3,
+        stepsPerRevolution:800,
+        value: 0,
+        strings: {label:'', resetStr:'Reset', tooltipHandle:'Drag to set value'},
+        after: {
+          valueChange: Y.bind(setDelay, delayDial)
+        }
+      });*/
+
       var reverbDial = new Y.Dial({
+        min: 0,
+        max: 6,
+        diameter: 50,
+        centerButtonDiameter: 0.3,
+        decimalPlaces: 2,
+        stepsPerRevolution:6,
+        value: 0,
+        strings: {label:'', resetStr:'Reset', tooltipHandle:'Drag to set value'},
+        after: {
+          valueChange: Y.bind(setReverb, reverbDial)
+        }
       });
 
       var rateDial = new Y.Dial({
@@ -177,7 +220,6 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
           centerButtonDiameter: 0.3,
           stepsPerRevolution:5,
           decimalPlaces: 2,
-
           value: 1,
           strings: {label:'', resetStr:'Reset', tooltipHandle:'Drag to set value'},
           after: {
@@ -186,6 +228,7 @@ app.controller("collidoscope", function($scope, $timeout, $compile) {
       });
 
       rateDial.render('#demo');
+      reverbDial.render('#reverb');
 
   });
 });
@@ -210,16 +253,52 @@ app.directive("barDirective", function() {
       elem.css("width", scope.width);
 
       elem.bind("click", function(e){
-        soundFile.jump(scope.time, 0.5);
+        if (scope.$parent.first) {
+          var time;
+          if (scope.$parent.second){
+            var midpoint = (scope.$parent.first + scope.$parent.second)/2;
+
+            if (scope.time < midpoint){
+              time = scope.$parent.first;
+              scope.$parent.first = scope.time;
+            } else {
+              time = scope.$parent.second
+              scope.$parent.second = scope.time;
+            }
+          } else {
+            scope.$parent.second = scope.time;
+          }
+
+          var prevBar = $("div[time='" + time + "']");
+          if (prevBar){
+            prevBar.css("background", "white");
+            prevBar.removeAttr("marker");
+          }
+          soundFile.pause();
+          soundFile.jump(scope.$parent.first, scope.$parent.second - scope.$parent.first);
+          elem.attr("marker", "");
+          elem.css("background", "rgb(40,250,40)");
+        } else {
+          scope.$parent.first = scope.time;
+          elem.attr("marker", "");
+          elem.css("background", "rgb(40,250,40)");
+        }
       });
+
       elem.bind("mouseenter", function(){
-        elem.css("background", "rgba(250, 120, 0, 1)");
+        if (elem.attr("marker") == typeof undefined){
+          elem.css("background", "rgba(250, 120, 0, 1)");
+        }
       });
       elem.bind("mouseleave", function() {
-        elem.css("background", "white");
+        if (elem.attr("marker") == typeof undefined){
+          elem.css("background", "white");
+        }
       });
       elem.bind("dblclick", function(){
-        elem.css("background", "white");
+        if (!elem.attr("marker")){
+          elem.css("background", "white");
+        }
       });
     }
   };

@@ -12,6 +12,7 @@ body {
   height: 300px;
   margin-top: -150px;
   display:inline-block;
+  overflow: hidden;
 }
 
 .bar {
@@ -101,10 +102,15 @@ body {
   background: rgb(10,220,10);
 }
 
-#demo{
+.dials{
+ display: flex;
  position: absolute;
  top: 18px;
  left: 20px;
+}
+
+#reverb{
+  margin-left: 10px;
 }
 
 .yui3-dial-value-string{
