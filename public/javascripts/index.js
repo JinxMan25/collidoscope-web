@@ -255,6 +255,9 @@ app.directive("barDirective", function() {
       elem.bind("click", function(e){
         if (scope.$parent.first) {
           var time;
+          // If there is a second marker, find midpoint and if mouseclick is less than 
+          // the midpoint, the first marker moves to that point, otherwise the second 
+          // one does
           if (scope.$parent.second){
             var midpoint = (scope.$parent.first + scope.$parent.second)/2;
 
@@ -265,20 +268,25 @@ app.directive("barDirective", function() {
               time = scope.$parent.second
               scope.$parent.second = scope.time;
             }
-          } else {
+          } else {    // else just put a damn marker!
             scope.$parent.second = scope.time;
           }
 
+          //get rids of the previously placed marker
           var prevBar = $("div[time='" + time + "']");
           if (prevBar){
             prevBar.css("background", "white");
             prevBar.removeAttr("marker");
           }
+
+          //pause to avoid multiple noise clashing
           soundFile.pause();
           soundFile.jump(scope.$parent.first, scope.$parent.second - scope.$parent.first);
+
           elem.attr("marker", "");
           elem.css("background", "rgb(40,250,40)");
         } else {
+          //putting the first marker
           scope.$parent.first = scope.time;
           elem.attr("marker", "");
           elem.css("background", "rgb(40,250,40)");
